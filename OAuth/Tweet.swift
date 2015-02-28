@@ -28,7 +28,7 @@ class Tweet : NSObject {
         id = dictionary["id_str"] as? String
         retweetCount = dictionary["retweet_count"] as? Int
         favoriteCount = dictionary["favorite_count"] as? Int
-        println("Id: \(id)")
+        println("Id: \(id) favorites:\(favoriteCount) text: \(text)")
     }
     // converts createdAt to concise elapsed interval
     func getElapsedTime() -> String {

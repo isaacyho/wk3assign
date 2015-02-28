@@ -11,13 +11,19 @@ import UIKit
 class TweetViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
     @IBOutlet weak var tableView: UITableView!
     var refreshControl: UIRefreshControl!
-    
+    var dragMenuDelegate: DragMenuDelegate?
     var replyUserName: String?
     var replyStatusText: String?
     var replyStatusId: String?
-    
+    var showMentionsInsteadOfHome = false
     var detailsTweetCell: TweetCell?
     
+    @IBAction func onGesture(sender: UIPanGestureRecognizer) {
+        if ( sender.state == UIGestureRecognizerState.Began )
+        {
+            dragMenuDelegate?.didDragMenu()
+        }
+    }
     @IBAction func onRetweet(sender: AnyObject) {
         var s = sender as UIButton
         var cell = s.superview?.superview as UITableViewCell
@@ -27,6 +33,13 @@ class TweetViewController: UIViewController, UITableViewDataSource, UITableViewD
         TwitterClient.sharedInstance.retweet(id)
     }
     
+    @IBAction func onImageClick(sender: AnyObject) {
+        var cell = (sender as UIButton).superview?.superview as TweetCell
+        detailsTweetCell = cell
+        
+        performSegueWithIdentifier("profileSegue", sender: nil)
+
+    }
     
     @IBAction func onFavorite(sender: AnyObject) {
         var s = sender as UIButton
@@ -77,13 +90,17 @@ class TweetViewController: UIViewController, UITableViewDataSource, UITableViewD
         cell.initWithTweet( tweets![ indexPath.row ] )
         return cell
     }
-    override func viewDidLoad() {
-        super.viewDidLoad()
+    override func viewWillAppear(animated: Bool) {
+        super.viewWillAppear(animated)
+        println( "viewDidLoad" )
         tableView.rowHeight = UITableViewAutomaticDimension
         tableView.estimatedRowHeight = 120
         // Do any additional setup after loading the view.
-        TwitterClient.sharedInstance.fetchHomeTimelineAsync(setTweets)
-        
+        if ( showMentionsInsteadOfHome ) {
+            TwitterClient.sharedInstance.fetchMentionsTimelineAsync(setTweets)
+        } else {
+            TwitterClient.sharedInstance.fetchHomeTimelineAsync(setTweets)
+        }
         refreshControl = UIRefreshControl()
         refreshControl.addTarget( self, action: "onRefresh", forControlEvents: UIControlEvents.ValueChanged)
         tableView.insertSubview(refreshControl, atIndex: 0)
@@ -105,7 +122,11 @@ class TweetViewController: UIViewController, UITableViewDataSource, UITableViewD
     func onRefresh()
     {
         println( "on refresh" )
-        TwitterClient.sharedInstance.fetchHomeTimelineAsync(setTweets)
+        if ( showMentionsInsteadOfHome ) {
+            TwitterClient.sharedInstance.fetchMentionsTimelineAsync(setTweets)
+        } else {
+            TwitterClient.sharedInstance.fetchHomeTimelineAsync(setTweets)
+        }
         self.refreshControl.endRefreshing()
 
     }
@@ -120,15 +141,24 @@ class TweetViewController: UIViewController, UITableViewDataSource, UITableViewD
     // In a storyboard-based application, you will often want to do a little preparation before navigation
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
         if ( segue.identifier == "composeSegue" ) {
+            println("perform compose segue" )
             var vc = ( segue.destinationViewController as UINavigationController ).topViewController as ComposeViewController
 
             vc.replyUserName = replyUserName
             vc.replyStatusId = replyStatusId
             vc.replyText = replyStatusText
         } else if ( segue.identifier == "detailsSegue" ) {
+            println("perform details segue")
+
             var vc = ( segue.destinationViewController as UINavigationController ).topViewController as TweetDetailsViewController
             vc.tweetCell = detailsTweetCell
 
+        } else if ( segue.identifier == "profileSegue" ) {
+            println( "perform profile segue" )
+            var nvc = segue.destinationViewController as UINavigationController
+            println( "casting to: \(nvc.topViewController)")
+            var vc = nvc.topViewController as ProfileViewController
+            vc.user = detailsTweetCell!.tweet!.user
         }
         println("done with segue prep")
     }

@@ -75,6 +75,21 @@ class TwitterClient: BDBOAuth1RequestOperationManager {
             self.loginCompletion?(user:nil, error:error)
         }
     }
+    func fetchMentionsTimelineAsync( callback: ([Tweet]) -> () ) {
+        TwitterClient.sharedInstance.GET("1.1/statuses/mentions_timeline.json", parameters:nil, success: { (operation: AFHTTPRequestOperation!, response: AnyObject!) -> Void in
+            println("tweets received" )
+            println(response)
+            println("end response")
+            var tweets = Tweet.tweetsWithArray( response as [NSDictionary])
+            for t in tweets {
+                println( "text: \(t.text), created: \(t.createdAt)" )
+            }
+            callback( tweets )
+            
+            }, failure: { (operation: AFHTTPRequestOperation!, error: NSError!) -> Void in
+                println("error getting home timeline: \(error)")
+        })    
+    }
     func fetchHomeTimelineAsync( callback: ([Tweet]) -> () ) {
         TwitterClient.sharedInstance.GET("1.1/statuses/home_timeline.json", parameters:nil, success: { (operation: AFHTTPRequestOperation!, response: AnyObject!) -> Void in
         println("tweets received" )

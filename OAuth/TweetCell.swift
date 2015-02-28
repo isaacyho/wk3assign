@@ -14,7 +14,9 @@ class TweetCell: UITableViewCell {
     @IBOutlet weak var username: UILabel!
     @IBOutlet weak var message: UILabel!
     @IBOutlet weak var timeLabel: UILabel!
-    @IBOutlet weak var mainImage: UIImageView!
+
+    @IBOutlet weak var mainImage: UIButton!
+    
     override func awakeFromNib() {
         super.awakeFromNib()
         // Initialization code
@@ -31,7 +33,12 @@ class TweetCell: UITableViewCell {
         username.text = "@\(tweet.user!.screenName!)"
         message.text = tweet.text
         
-        mainImage.setImageWithURL( NSURL( string: tweet.user!.profileImageUrl! ) )
+        let url = NSURL(string: tweet.user!.profileImageUrl!)
+        let data = NSData(contentsOfURL: url!) //make sure your image in this url does exist, otherwise unwrap in a if let check
+        var img = UIImage(data:data!)
+        mainImage.setImage(img, forState: UIControlState.Normal)
+        
+        
         message.preferredMaxLayoutWidth = message.frame.size.width
         timeLabel.text = tweet.getElapsedTime()
         
